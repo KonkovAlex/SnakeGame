@@ -1,0 +1,52 @@
+
+#matrix1
+{
+    width: 400px;
+    height: 400px;
+    border: 4px solid #999;
+    /*border-top: 1px solid #999;*/
+    /*border-left: 1px solid #999;*/
+}
+#inp1 {
+    width: 400px;
+}
+.snake_cell {
+background-color: greenyellow;
+}
+.snake_head_up{}
+.snake_head_down{}
+.snake_head_left{  }
+.snake_head_right{}
+.snake_tail_up{}
+.snake_tail_down{}
+.snake_tail_left{  }
+.snake_tail_right{}
+
+.snake_mouse_inside{}
+
+.poison_cell {
+    background-color: black;
+}
+.life_cell {
+    background-color: red;
+}
+.disappearing_cell {
+    background-color: #F65A5B;
+}
+.mouse_cell {
+    background-color: darkslategray;
+}
+.mouse_up{}
+.mouse_down{}
+.mouse_left{}
+.mouse_right{}
+
+.cell {
+    background-color: white;
+    border-radius: 1px;
+    float: left;
+    width: 19px;
+    height: 19px;
+    border-bottom: 1px solid #999;
+    border-right: 1px solid #999;
+}
