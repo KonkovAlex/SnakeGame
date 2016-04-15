@@ -1,7 +1,7 @@
 /**
  * Created by Aleksei on 23.03.2016.
  */
-function Mouse(cell, matrix, startSpeed, moveStackCallback) {
+function Mouse(cell, matrix, startMoveInterval, moveStackCallback) {
     //Mouse cell jumps by field.
     // If it gets stack (meet cell which isn't free) it calls moveStackCallback
     var self = this;
@@ -21,28 +21,34 @@ function Mouse(cell, matrix, startSpeed, moveStackCallback) {
     ];
     self._curse = self.getRandomCourse();
     self.movingIntervalId = undefined;
-    self.create(startSpeed);
-    self.setMoving = function(speed){
+    self.setMouseClass(self._cell);
+    self.changeSpeed(startMoveInterval);
+
+    self.freeze = function(){
         if (self.movingIntervalId){
-            clearInterval(self.movingIntervalId)
+            window.clearInterval(self.movingIntervalId);
+            self.movingIntervalId = undefined
         }
-        self.movingIntervalId = setInterval(self.move, speed);
     };
-
-
-    self.create = function(startSpeed){
-        self.setMouseClass(self._cell);
-        self.setMoving(startSpeed);
+    self.unfreeze = function(){
+        if (self.__speed && !self.movingIntervalId){
+            self.movingIntervalId = window.setInterval(self.__move, self.__speed)
+        }
+    };
+    self.changeSpeed = function(speedInterval, letGo){
+        self.__speed = speedInterval;
+        self.freeze();
+        if (letGo){
+            self.unfreeze();
+        }
     };
 
     self.die = function(){
-        if (self.movingIntervalId){
-            clearInterval(self.movingIntervalId)
-        }
+        self.freeze();
         self._matrix.setCellFree(self._cell)
     };
 
-    self.move = function(){
+    self.__move = function(){
         var nextCell = self.changeCurseRandomly();
         if (self._matrix.isCellFree(nextCell)){
             self.move(nextCell)
@@ -111,34 +117,52 @@ function Mouse(cell, matrix, startSpeed, moveStackCallback) {
         }
         return self._curses[newCurseInd]
     };
-
     self.setMouseClass = function(cell){
         self._matrix.addCellClass(cell, 'mouse_cell');
         self._matrix.addCellClass(cell, self._curse.cssClass )
     };
-};
+}
 
-function BonusCell(cell, matrix, bonusClass, timeOut, death_callback){
+var BonusCell = function(cell, matrix, bonusClass, timeOut, death_callback){
     var self = this;
     self._matrix = matrix;
     self._cell = cell;
     self.bonusClass = bonusClass;
     self.disablingClass = 'disappearing_cell';
-
+    self.timeOut = timeOut;
     self._togglingTime = 4000;
-    self.create(timeOut);
+    self.create();
 
-    self.create = function(cell, cssClass, timeOut){
-        self._matrix.addCellClass(cell, cssClass);
-        if (timeOut){
-            self.aliveTimerId = setTimeout(self.destroy, timeOut);
-            if (timeOut>self._togglingTime){
-                setTimeout(self.startToggling, timeOut - self._togglingTime)
+    self.create = function(){
+        //if timeout returns false it wont specify alive timeout
+        self._matrix.addCellClass(self._cell, self.bonusClass);
+        self.setAliveTimeout();
+
+    };
+    self.setAliveTimeout = function(){
+        if (self.timeOut){
+            self.aliveTimerId = window.setTimeout(self.destroy, self.timeOut);
+            if (self.timeOut<self._togglingTime){
+                window.setTimeout(self.startToggling, self.timeOut - self._togglingTime)
             }
+            self._startTime = window.performance.now()
         }
     };
     self.startToggling = function(){
         self.toggleIntervalId = setInterval(self.toggle, 300)
+    };
+
+    self.freeze = function(){
+        if (self.timeOut){
+            var aliveTime = window.performance.now() - self._startTime;
+            self.timeOut -= aliveTime;
+            self.clearTimers()
+        }
+    };
+    self.unfreeze = function(){
+        if (self.timeOut){
+            self.setAliveTimeout()
+        }
     };
 
     self.toggle = function(){
@@ -148,7 +172,7 @@ function BonusCell(cell, matrix, bonusClass, timeOut, death_callback){
             self._matrix.addCellClass(self._cell, self.disablingClass)
         }
     };
-    self.destroy = function(){
+    self.clearTimers = function(){
         if (self.toggleIntervalId){
             clearInterval(self.toggleIntervalId);
             self.toggleIntervalId = undefined;
@@ -157,6 +181,10 @@ function BonusCell(cell, matrix, bonusClass, timeOut, death_callback){
             clearTimeout(self.aliveTimerId);
             self.aliveTimerId = undefined;
         }
+    };
+
+    self.destroy = function(){
+        self.clearTimers();
         self._matrix.setCellFree(self._cell);
         death_callback(cell);
     };

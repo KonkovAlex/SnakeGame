@@ -3,10 +3,12 @@
  */
 
 
-function Snake(startCell, matrix, lifes){
+function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
     var self = this;
     self._matrix = matrix;
     self.__lifes = lifes;
+    self.moveInterval = startMoveInterval;
+    self.__onMoveCallback = onStackCallback;
     self.__cutedTail = undefined;
     self.maxLength = 20;
     self.snakeCellClass = 'snake_cell';
@@ -30,12 +32,15 @@ function Snake(startCell, matrix, lifes){
     ];
     self._reservedCurses = self._curses.map(function(el){return el.title});
     self._curse = self._curses[0];
+    self._lastreceivedCurses = [];
+
     self.body = [];
     self.formStartBody(startCell);
     self.events = {
         gameOver :  'gameOver',
         lifeLost :  'lifeLost',
         outOfField: 'outOfField',
+        moveStack: 'moveStack',
         ok: 'ok'
     };
 
@@ -76,6 +81,17 @@ function Snake(startCell, matrix, lifes){
         return {x: x, y: y}
     };
 
+    self.startMoving = function(){
+        if (!self._moveIntervalId){
+            self._moveIntervalId = window.setInterval(self.move(), self.speed);
+        }
+    };
+
+    self.stopMoving = function(){
+        window.clearInterval(self._moveIntervalId);
+        self._moveIntervalId = undefined;
+    };
+
     self._addBodyPart = function(bodyCell, hasFood){
         body.unshift({
             cell: bodyCell,
@@ -112,25 +128,27 @@ function Snake(startCell, matrix, lifes){
         }
     };
 
-    self.changeCurse = function(newCurse, eventHandler){
+    self.changeCurse = function(newCurse){
         if (!(newCurse in self._reservedCurses))
             return;
         if (self._curse.title == newCurse){
-            self.move(eventHandler)
+            self.move()
         } else {
             var ind = self._reservedCurses.indexOf(newCurse);
             self._curse = self._curses[ind];
         }
     };
 
-    self.dropOneLife = function(callback){
+    self.dropOneLife = function(){
         if (self.__lifes>0){
+            self.stopMoving();
             self.__lifes --;
-            callback(self.events.lifeLost);
+            self.__onMoveCallback(self.events.lifeLost);
+            self.resetBody();
             alert(self.__lifes + ' lifes left. Press control keys to continue playing ;)')
+
         } else {
             self.destroySnake();
-            callback(self.events.gameOver);
         }
     };
 
@@ -142,20 +160,26 @@ function Snake(startCell, matrix, lifes){
         return true
     };
 
-    self.move = function(callback){
+    self.move = function(){
         //Snake is moving in all cases, but returns the _cell it has been moved
         var newCell = self.getNextCell();
         if (self._matrix.checkIsOutOfField(newCell)){
-            callback(self.events.outOfField);
-            self.dropOneLife(callback);
+            self.__onMoveCallback(self.events.outOfField);
+            self.dropOneLife();
+        } else if (self._matrix.isCellFree(newCell)){
+            self.__move();
+            self.__onMoveCallback(self.events.ok)
         } else if (self.isCellInBody(newCell)){
-            self.dropOneLife(callback)
+            self.dropOneLife()
         } else{
             //moving
-            self._shiftHead(newCell);
-            self.cutTail();
-            callback(self.events.ok, newCell)
+            self.__move(newCell);
+            self.__onMoveCallback(self.events.moveStack, newCell)
         }
+    };
+    self.__move = function(nextCell){
+        self._shiftHead(nextCell);
+        self.cutTail();
     };
 
     self._shiftHead = function(nextCell){
@@ -192,6 +216,9 @@ function Snake(startCell, matrix, lifes){
         }
 
     };
+    self.resetBody = function(){
+        self.clearAllTails()
+    };
 
     self.clearBody = function(){
         _.map(self.body, function(bodyPart){
@@ -201,7 +228,9 @@ function Snake(startCell, matrix, lifes){
     };
 
     self.destroySnake = function(){
+        self.stopMoving();
         self.clearBody();
+        self.__onMoveCallback(self.events.gameOver);
         alert('Your Snake is DEAD :(\nGame Over')
     };
 }
