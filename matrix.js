@@ -7,30 +7,33 @@ var Matrix = function(containerId, rowCount, colCount){
     self._matrix = $(containerId);
     self.maxRows = rowCount;
     self.maxCols = colCount;
+    self.area = rowCount*colCount;
     self.create = function () {
-        var n = self.maxRows * self.maxCols;
-        for (var i = 0; i<n; i++){
-            self._matrix.append('<div class="_cell"></div>');
+
+        for (var i = 0; i<self.area; i++){
+            self._matrix.append('<div class="cell"></div>');
         }
     };
     self.getCellInd = function(cell){
-        return cell.y*self.maxCols + cell.x
+        var ind = cell.y*self.maxCols + cell.x;
+        return ind
     };
 
     self.getCell = function(cell){
         var ind = self.getCellInd(cell);
-        return self._matrix.find('._cell:eq('+ind+')')
+        var $elt = self._matrix.find('.cell:eq('+ind+')');
+        return $elt
     };
 
     self.isCellFree = function(cell){
         var $cell = self.getCell(cell);
         var classes = $cell.attr('class');
-        return classes == '_cell';
+        return classes == 'cell';
     };
 
     self.setCellFree = function(cell){
         var $cell = self.getCell(cell);
-        $cell.attr('class', '_cell')
+        $cell.attr('class', 'cell')
     };
 
     self.hasCellClass = function(cell, cName){
@@ -69,10 +72,9 @@ var Matrix = function(containerId, rowCount, colCount){
         }
     };
 
-    self.checkIsOutOfField = function(cell) {
-        if (0 > cell.y || cell.y >= self.maxCols)
-            return false;
-        else return !(0 > cell.x || cell.x >= self.maxRows);
+    self.isOutOfField = function(cell) {
+        if (0 > cell.y || cell.y >= self.maxCols) return true;
+        else return (0 > cell.x || cell.x >= self.maxRows);
     };
     self.getRandomInt = function(min, max){
         return Math.floor(Math.random()*(max-min+1)) + min;

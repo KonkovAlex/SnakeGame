@@ -11,35 +11,34 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
     self.__onMoveCallback = onStackCallback;
     self.__cutedTail = undefined;
     self.maxLength = 20;
-    self.snakeCellClass = 'snake_cell';
+    self.snakeCellClass = 'snake';
     self._curses = [
-        {   title: 'Up',
-            tailClass: 'snake',
-            headClass: 'snake'
+        {   title: 'Right',
+            tailClass: 'snake_tail_right',
+            headClass: 'snake_head_right'
         },
-        {   title: 'Down',
-            tailClass: 'snake',
-            headClass: 'snake'
+        {   title: 'Up',
+            tailClass: 'snake_tail_up',
+            headClass: 'snake_head_up'
         },
         {   title: 'Left',
-            tailClass: 'snake',
-            headClass: 'snake'
+            tailClass: 'snake_tail_left',
+            headClass: 'snake_head_left'
         },
-        {   title: 'Right',
-            tailClass: 'snake',
-            headClass: 'snake'
+        {   title: 'Down',
+            tailClass: 'snake_tail_down',
+            headClass: 'snake_head_down'
         }
     ];
     self._reservedCurses = self._curses.map(function(el){return el.title});
     self._curse = self._curses[0];
     self._lastreceivedCurses = [];
-
     self.body = [];
-    self.formStartBody(startCell);
     self.events = {
         gameOver :  'gameOver',
         lifeLost :  'lifeLost',
         outOfField: 'outOfField',
+        catchSelf: 'catchSelf',
         moveStack: 'moveStack',
         ok: 'ok'
     };
@@ -48,12 +47,12 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
         //Method creates snake with 3 body objects
         self.body = [];
         var bodyCell = startCell;
+
         function getValidCell(baseCell){
             for (var c in self._curses){
-                self._curse = c;
+                self._curse = self._curses[c];
                 var cell = self.getNextCell(baseCell);
-                if (!self._matrix.checkIsOutOfField(cell))
-                    return cell;
+                if (!self._matrix.isOutOfField(cell)) return cell;
             }
             self.destroySnake()
         }
@@ -63,20 +62,27 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
         }
         self.setBodyHead(true);
         self.setBodyTail(true);
+        self.move();
+        self.move();
+        self.move();
+
     };
 
     self.getNextCell = function(baseCell){
+        if (!baseCell){
+            baseCell = self.body[0].cell
+        }
         var x = baseCell.x;
         var y = baseCell.y;
         switch (self._curse.title){
             case 'Up':
-                x++; break;
-            case 'Down':
-                x--; break;
-            case 'Right':
-                y++; break;
-            case 'Left':
                 y--; break;
+            case 'Down':
+                y++; break;
+            case 'Right':
+                x++; break;
+            case 'Left':
+                x--; break;
         }
         return {x: x, y: y}
     };
@@ -93,7 +99,7 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
     };
 
     self._addBodyPart = function(bodyCell, hasFood){
-        body.unshift({
+        self.body.unshift({
             cell: bodyCell,
             hasFood: hasFood,
             curse: self._curse
@@ -111,7 +117,7 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
     };
 
     self.setBodyTail = function(val){
-        var bodyPart = self.body[-1];
+        var bodyPart = self.body.slice(-1)[0];
         if (val){
             self._matrix.addCellClass(bodyPart.cell, bodyPart.curse.tailClass )
         } else {
@@ -163,18 +169,20 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
     self.move = function(){
         //Snake is moving in all cases, but returns the _cell it has been moved
         var newCell = self.getNextCell();
-        if (self._matrix.checkIsOutOfField(newCell)){
+        if (self._matrix.isOutOfField(newCell)){
             self.__onMoveCallback(self.events.outOfField);
             self.dropOneLife();
         } else if (self._matrix.isCellFree(newCell)){
-            self.__move();
+            self.__move(newCell); //moving without some actions. That's no need to work with events.ok
             self.__onMoveCallback(self.events.ok)
         } else if (self.isCellInBody(newCell)){
-            self.dropOneLife()
+            self.dropOneLife();
+            self.__onMoveCallback(self.events.catchSelf)
         } else{
-            //moving
+            //moving with little stack :)
             self.__move(newCell);
             self.__onMoveCallback(self.events.moveStack, newCell)
+
         }
     };
     self.__move = function(nextCell){
@@ -233,4 +241,5 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
         self.__onMoveCallback(self.events.gameOver);
         alert('Your Snake is DEAD :(\nGame Over')
     };
+    self.formStartBody(startCell);
 }

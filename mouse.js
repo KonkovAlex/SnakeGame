@@ -19,10 +19,8 @@ function Mouse(cell, matrix, startMoveInterval, moveStackCallback) {
         {_curse:'Left',  cssClass: 'mouse_left'},
         {_curse:'UpLeft',    cssClass: 'mouse_up_left'}
     ];
-    self._curse = self.getRandomCourse();
     self.movingIntervalId = undefined;
-    self.setMouseClass(self._cell);
-    self.changeSpeed(startMoveInterval);
+
 
     self.freeze = function(){
         if (self.movingIntervalId){
@@ -118,9 +116,12 @@ function Mouse(cell, matrix, startMoveInterval, moveStackCallback) {
         return self._curses[newCurseInd]
     };
     self.setMouseClass = function(cell){
-        self._matrix.addCellClass(cell, 'mouse_cell');
+        self._matrix.addCellClass(cell, 'mouse');
         self._matrix.addCellClass(cell, self._curse.cssClass )
     };
+    self._curse = self.getRandomCourse();
+    self.setMouseClass(self._cell);
+    self.changeSpeed(startMoveInterval);
 }
 
 var BonusCell = function(cell, matrix, bonusClass, timeOut, death_callback){
@@ -131,7 +132,8 @@ var BonusCell = function(cell, matrix, bonusClass, timeOut, death_callback){
     self.disablingClass = 'disappearing_cell';
     self.timeOut = timeOut;
     self._togglingTime = 4000;
-    self.create();
+    self.deathCallback = death_callback;
+
 
     self.create = function(){
         //if timeout returns false it wont specify alive timeout
@@ -141,7 +143,7 @@ var BonusCell = function(cell, matrix, bonusClass, timeOut, death_callback){
     };
     self.setAliveTimeout = function(){
         if (self.timeOut){
-            self.aliveTimerId = window.setTimeout(self.destroy, self.timeOut);
+            self.aliveTimerId = window.setTimeout(self._die, self.timeOut);
             if (self.timeOut<self._togglingTime){
                 window.setTimeout(self.startToggling, self.timeOut - self._togglingTime)
             }
@@ -183,9 +185,13 @@ var BonusCell = function(cell, matrix, bonusClass, timeOut, death_callback){
         }
     };
 
-    self.destroy = function(){
+    self._die =  function(){
+        self.die();
+        self.deathCallback(self._cell);
+    };
+    self.die = function(){
         self.clearTimers();
         self._matrix.setCellFree(self._cell);
-        death_callback(cell);
     };
+    self.create();
 };

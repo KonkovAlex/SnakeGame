@@ -19,13 +19,14 @@ function SnakeGame(workField, startSpeed, fiveRecords){
     self.currentSpeed = self.startSpeed;
 
     if (fiveRecords && fiveRecords.length == 5){
-        self.fiveRecords = fiveRecords
+        self.achievedRecords = fiveRecords
     } else {
-        self.fiveRecords = [0,0,0,0,0];
+        self.achievedRecords = [0,0,0,0,0];
     }
     self.score = 0; // counts like snake.body.length()*self.speed
 
-    self.max_bonuses = 5;
+    self.max_bonuses = self.workField.area*0.02;  //2% of all field area
+    self.max_mouses = self.workField.area*0.01;
     self.mouses = [];
     self.bonuses = [];
     self.newBonusInterval = 10000;
@@ -36,7 +37,6 @@ function SnakeGame(workField, startSpeed, fiveRecords){
         self.runMany(self.addMouse, 3);
         self.runMany(self.addBonus, 5);
     };
-    self.initialize();
 
     self.startAll = function (){
         if (!self.running) {
@@ -80,33 +80,83 @@ function SnakeGame(workField, startSpeed, fiveRecords){
         }
     };
     self.addBonuses = function(){
-
+        if (self.bonuses.length <= self.max_bonuses){
+            self.addBonus()
+        }
+        if (self.mouses.length <= self.max_mouses) {
+            self.addMouse()
+        }
+    };
+    self.addBonus = function(){
+        //possibility of throwing life bonus is equal 20%
+        var simple_array = [0,0,0,1,0];
+        var bonus_ind = self.getRandInt(0, simple_array.length);
+        var bonusName = 'life' ? simple_array[bonus_ind]: 'poison';
+        var newBonus = new BonusCell(self.workField.getRandomFreeCell(),self.workField, bonusName, 50000, self.killBonus);
+        self.bonuses.push(newBonus);
+    };
+    self.addMouse = function(){
+        var mouseBonusSpeed = 20;
+        var freeCell = self.workField.getRandomFreeCell();
+        var m_speed =  self.convertTimeoutSpeed(self.startSpeed+mouseBonusSpeed);
+        var newMouse = new Mouse(freeCell, self.workField, m_speed, self.checkMouseMove);
+        self.mouses.push(newMouse)
+    };
+    self.killBonus = function(cell){
+        for (var i=0; i<self.bonuses.length; i++){
+            if (self.bonuses[i]._cell === cell){
+                self.bonuses[i].die();
+                self.bonuses.delete(i);
+                break;
+            }
+        }
+    };
+    self.killMouse = function(cell){
+        for (var i=0; i<self.mouses.length; i++){
+            if (self.mouses[i]._cell === cell){
+                self.mouses[i].die();
+                self.mouses.delete(i);
+                break;
+            }
+        }
     };
 
     self.finish = function(){
-        self.stop();
-        if (isVictory){
-            alert('Victory! Congratulations!!!\n Play one more time?')
-        } else if (attempts > 0){
-            attempts--;
-            alert('You have '+ self.attempts + ' attempts remaining. Game continue...')
-        } else
-        {
-            alert('Sorry, You loose :( \nGameOver')
+        self.pauseAll();
+        self.clearWindow();
+        var place = self.getPlace();
+        if (place){
+            alert('Congratulations!!!\nYou are ' + place +'-th! \nYou can brake this record, try one more time!!!')
+        } else {
+            alert('Sorry, You loose :( Best results are untouchable\nGameOver')
         }
     };
     self.restartGame = function(){
         self.finish();
         self.initialize()
     };
+    self.clearWindow = function(){};
+    self.clearAllBonuses = function(){};
+    self.clearAllMouses = function(){};
+
+    self.getPlace = function(){
+        var recLen = self.achievedRecords.length;
+        for (var i = 0; i<=recLen; i++){
+            if (self.achievedRecords[i]<self.score){
+                self.achievedRecords.splice(i-1, 0, self.score);
+                break;
+            }
+        }
+        return i ? i < recLen : undefined
+    };
 
     self.onSnakeStack = function(message, step_cell){
         switch (message){
             case 'gameOver':
-                self.gameOver();
+                self.finish();
                 break;
             case 'lifeLost':
-                self.lifeLost();
+                alert("You're out of field space :(");
                 break;
             case 'outOfField':
                 alert("You're out of field space :(");
@@ -116,9 +166,8 @@ function SnakeGame(workField, startSpeed, fiveRecords){
         }
     };
 
-
     self.changeSpeed = function(newSpeed, startOk){
-        self.stop();
+        self.pauseAll();
         self.speed = newSpeed;
         if (startOk) {
             self.start()
@@ -138,63 +187,73 @@ function SnakeGame(workField, startSpeed, fiveRecords){
         self.changeSpeed()
     };
     self.checkSnakeMove = function(cell){
-        if (self._matrix.hasCellClass(cell, 'poison_cell')){
+        if (self.workField.hasCellClass(cell, 'poison')){
             self.poisonEaten(cell);
-        } else if (self._matrix.hasCellClass(cell, 'life_cell')){
+        } else if (self.workField.hasCellClass(cell, 'life')){
             self.lifeEaten(cell);
-        } else if (self._matrix.hasCellClass(cell, 'mouse_cell')){
+        } else if (self.workField.hasCellClass(cell, 'mouse')){
             self.mouseEaten(cell);
         }
     };
     self.checkMouseMove = function(mouseCell, stackCell){
         var hasClass = function(cls){
-            return self._matrix.hasCellClass(stackCell, cls)
+            return self.workField.hasCellClass(stackCell, cls)
         };
-        if (hasClass('poison_cell')){
+        if (hasClass('poison')){
         //    kill mouse and poison
-        } else if (hasClass('life_cell')){
+        } else if (hasClass('life')){
         //    add mouse drop life
-        } else if (hasClass('mouse_cell')){
+        } else if (hasClass('mouse')){
 
         }
     };
-    self.runMany = function(amount, bonusFunc){
+    self.runMany = function(bonusFunc, amount){
         for (var i = 0; i < amount; i++){
             bonusFunc();
         }
     };
-    self._addPoison = function(){};
-    self._addLife = function(){};
-    self.addMouse = function(){
-        var mouseBonusSpeed = 20;
-        var newMouse = Mouse(self._matrix.getRandomFreeCell(), self._matrix, self.convertTimeoutSpeed(self.startSpeed+mouseBonusSpeed), self.checkMouseMove );
-        self.mouses.push(newMouse)
-    };
-    self.addBonus = function(){
+
+    self.poisonEaten = function(cell){
+        self.snake.dropOneLife();
+        self.killBonus(cell);
     };
 
-    self.poisonEaten = function(){};
-    self.lifeEaten = function(){};
-    self.mouseEaten = function(mouseCell){
-        self.snake.eatFood()
+    self.lifeEaten = function(cell){
+        self.snake.addLife();
+        self.killBonus(cell)
     };
+
+    self.mouseEaten = function(cell){
+        self.score+=self.snake.body.length;
+        self.snake.eatFood();
+        self.killMouse(cell);
+    };
+
+
+    self.getObjByCell = function(objArray, cell){
+        for (var obj in objArray){
+            if (obj._cell === cell) return obj
+        }
+    };
+
     self.convertTimeoutSpeed = function(timeout){
         return 10000/timeout
     };
-};
+    self.getRandInt = function(min, max){
+        return self.workField.getRandomInt(min, max);
+    };
+    self.initialize();
+}
 
 
 window.onload = function(){
     var m1 = new Matrix ('#matrix1', 20, 20);
     m1.create();
+    //m1.addCellClass({x:1, y:1}, 'snake_cell');
     var game = new SnakeGame(m1, 200);
-    var input = $('inp1');
-    game.start();
-    input.oninput = game.setExtraSpeed;
-    document.onkeydown = game.onKeyPress;
+    //var input = $('inp1');
+    //game.start();
+    //input.oninput = game.setExtraSpeed;
+    //document.onkeydown = game.onKeyPress;
 
-    //function(){
-    //    snakeSpeed = 520-input.value;
-    //    window.clearInterval(document.intervalId)
-    //};
 };
