@@ -174,7 +174,7 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
             self.dropOneLife();
         } else if (self._matrix.isCellFree(newCell)){
             self.__move(newCell); //moving without some actions. That's no need to work with events.ok
-            self.__onMoveCallback(self.events.ok)
+            self.__onMoveCallback(self.events.ok, newCell)
         } else if (self.isCellInBody(newCell)){
             self.dropOneLife();
             self.__onMoveCallback(self.events.catchSelf)
@@ -240,6 +240,9 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
         self.clearBody();
         self.__onMoveCallback(self.events.gameOver);
         alert('Your Snake is DEAD :(\nGame Over')
+    };
+    self.addLife = function(){
+        self.__lifes++
     };
     self.formStartBody(startCell);
 }

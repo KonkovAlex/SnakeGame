@@ -25,7 +25,7 @@
 }
 .snake_head_up{
     background-image: url('Images/snake_head_up.png') !important;
-    background-size: cover;
+    background-size: contain;
 }
 .snake_head_down{
     background-image: url('Images/snake_head_down.png') !important;
@@ -33,56 +33,104 @@
 }
 .snake_head_left{
     background-image: url('Images/snake_head_left.png') !important;
-    background-size: cover;
+    background-size: contain;
 }
 .snake_head_right{
     background-image: url('Images/snake_head_right.png') !important;
-    background-size: cover;
-
+    background-size: contain;
     /*background-color: #25ff19 !important;*/
 }
 .snake_tail_up{
     background-image: url('Images/snake_tail_up.png') !important;
-    background-size: cover;
+    background-size: contain;
 }
 .snake_tail_down{
     background-image: url('Images/snake_tail_down.png') !important;
-    background-size: cover;
+    background-size: contain;
 }
 .snake_tail_left{
     background-image: url('Images/snake_tail_left.png') !important;
-    background-size: cover;
+    background-size: contain;
 }
 .snake_tail_right{
     background-image: url('Images/snake_tail_right.png') !important;
-    background-size: cover;
+    background-size: contain;
 }
 .snake_mouse_inside{
-    background-color: #9eff0b !important;
+    background-image: url('Images/snake_mouse_inside.png') !important;
+    background-size: 150%;
 }
+.snake_body_h{
+    background-image: url('Images/snake_body_h.png') !important;
+    background-size: contain;
+}
+.snake_body_v{
+    background-image: url('Images/snake_body_v.png') !important;
+    background-size: contain;
+}
+.snake_body_up_l{
+    background-image: url('Images/snake_body_up_l.png') !important;
+    background-size: contain;
+}
+.snake_tail_up_r{
+    background-image: url('Images/snake_tail_up_r.png') !important;
+    background-size: contain;
+}
+.snake_body_d_l{
+    background-image: url('Images/snake_body_d_l.png') !important;
+    background-size: contain;
+}
+.snake_body_d_r{
+    background-image: url('Images/snake_body_d_r.png') !important;
+    background-size: contain;
+}
+
 
 .cell.poison {
-    background-color: black;
+    background-image: url('Images/death.png') !important;
+    background-size: contain;
 }
 .cell.life {
-    background-color: red;
+    background-image: url('Images/life.jpg') !important;
+    background-size: contain;
 }
 .disappearing_cell {
-    background-color: #F65A5B !important;
+    border: 2px solid red;
+
 }
 .cell.mouse {
-    background-color: #424c4f !important;
+    background-color: #424c4f;
 }
 .mouse_up{
-    background-color: #636f72 !important;
+    background-image: url('Images/mouse_up.png') !important;
+    background-size: contain;
 }
 .mouse_down{
-    background-color: #636f72 !important;
+    background-image: url('Images/mouse_down.png') !important;
+    background-size: contain;
 }
 .mouse_left{
-    background-color: #636f72 !important;
+    background-image: url('Images/mouse_left.png') !important;
+    background-size: contain;
 }
 .mouse_right{
-    background-color: #636f72 !important;
+    background-image: url('Images/mouse_right.png') !important;
+    background-size: contain;
 }
 
+.mouse_ur{
+    background-image: url('Images/mouse_ur.png') !important;
+    background-size: contain;
+}
+.mouse_ul{
+    background-image: url('Images/mouse_ul.png') !important;
+    background-size: contain;
+}
+.mouse_dr{
+    background-image: url('Images/mouse_dr.png') !important;
+    background-size: contain;
+}
+.mouse_dl{
+    background-image: url('Images/mouse_dl.png') !important;
+    background-size: contain;
+}

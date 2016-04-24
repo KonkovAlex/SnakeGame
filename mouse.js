@@ -11,13 +11,13 @@ function Mouse(cell, matrix, startMoveInterval, moveStackCallback) {
     self.moveCallback = moveStackCallback;
     self._curses = [
         {_curse:'Up',    cssClass: 'mouse_up'},
-        {_curse:'UpRight',   cssClass: 'mouse_up_right'},
+        {_curse:'UpRight',   cssClass: 'mouse_ur'},
         {_curse:'Right', cssClass: 'mouse_right'},
-        {_curse:'DownRight', cssClass: 'mouse_down_right'},
+        {_curse:'DownRight', cssClass: 'mouse_dr'},
         {_curse:'Down',  cssClass: 'mouse_down'},
-        {_curse:'DownLeft',  cssClass: 'mouse_down_left'},
+        {_curse:'DownLeft',  cssClass: 'mouse_dl'},
         {_curse:'Left',  cssClass: 'mouse_left'},
-        {_curse:'UpLeft',    cssClass: 'mouse_up_left'}
+        {_curse:'UpLeft',    cssClass: 'mouse_ul'}
     ];
     self.movingIntervalId = undefined;
 
@@ -94,7 +94,7 @@ function Mouse(cell, matrix, startMoveInterval, moveStackCallback) {
             if (self._curse in notAvailableCurses)
                 continue;
             nextCell = self.getNextCell();
-            if (self._matrix.checkIsOutOfField(nextCell)){
+            if (self._matrix.isOutOfField(nextCell)){
                 notAvailableCurses.push(self._curse)
             } else break
         }
