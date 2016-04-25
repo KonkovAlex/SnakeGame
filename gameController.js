@@ -13,10 +13,10 @@ function SnakeGame(workField, startSpeed, fiveRecords){
     var self = this;
     self.running = false;
     self.workField = workField;
-    self.startSpeed = startSpeed;
-    self.__maxSpeed = 100;
-    self.__minSpeed = 5;
-    self.currentSpeed = self.startSpeed;
+    self.__maxAllowedSpeed = 70;
+    self.__minAllowedSpeed = 10;
+    self.initialSpeed = startSpeed;
+    self.currentSpeed = startSpeed;
 
     if (fiveRecords && fiveRecords.length == 5){
         self.achievedRecords = fiveRecords
@@ -36,7 +36,9 @@ function SnakeGame(workField, startSpeed, fiveRecords){
         self.snake = new Snake({x:1, y:1}, self.workField, 3, snakeSpeed, self.onSnakeStack);
         self.runMany(self.addMouse, 4);
         self.runMany(self.addBonus, 5);
+        self.setInitialSpeed(self.initialSpeed)
     };
+
 
     self.startAll = function (){
         if (!self.running) {
@@ -45,6 +47,7 @@ function SnakeGame(workField, startSpeed, fiveRecords){
             self._freezeMouses(false);
             self._freezeBonuses(false);
             self.setBonusAddingOn(true);
+            self.setSpeedGrowthOn(true);
         }
     };
 
@@ -55,35 +58,22 @@ function SnakeGame(workField, startSpeed, fiveRecords){
             self._freezeMouses(true);
             self._freezeBonuses(true);
             self.setBonusAddingOn(false);
+            self.setSpeedGrowthOn(false);
         }
     };
 
     self._freezeMouses = function(val){
-        var operation = val ? 'freeze' : 'unfreeze';
-        for (var m in self.mouses){
-            m[operation]()
+        if (val){
+            for (var m in self.mouses) self.mouses[m].freeze()
+        } else {
+            for (var m in self.mouses) self.mouses[m].unfreeze()
         }
     };
     self._freezeBonuses = function(val){
-        var operation =val ? 'freeze' : 'unfreeze';
-        for (var b in self.bonuses){
-            b[operation]();
-        }
-    };
-    self.setBonusAddingOn = function(val){
-        if (self.bonusIntervalId){
-            window.clearInterval(self.bonusIntervalId);
-            self.bonusIntervalId = undefined;
-        }
         if (val){
-            self.bonusIntervalId = window.setInterval(function(){
-                if (self.bonuses.length <= self.max_bonuses){
-                    self.addBonus()
-                }
-                if (self.mouses.length <= self.max_mouses) {
-                    self.addMouse()
-                }
-            }, self.newBonusInterval)
+            self.bonuses.map(function(b){b.freeze()})
+        } else {
+            self.bonuses.map(function(b){b.unfreeze()})
         }
     };
 
@@ -95,13 +85,13 @@ function SnakeGame(workField, startSpeed, fiveRecords){
         var newBonus = new BonusCell(self.workField.getRandomFreeCell(),self.workField, bonusName, 50000, self.killBonus);
         self.bonuses.push(newBonus);
     };
+
     self.addMouse = function(){
-        var mouseBonusSpeed = 20;
         var freeCell = self.workField.getRandomFreeCell();
-        var m_speed =  self.convertTimeoutSpeed(self.startSpeed+mouseBonusSpeed);
-        var newMouse = new Mouse(freeCell, self.workField, m_speed, self.checkMouseMove);
+        var newMouse = new Mouse(freeCell, self.workField, self.checkMouseMove);
         self.mouses.push(newMouse)
     };
+
     self.killBonus = function(cell){
         for (var i=0; i<self.bonuses.length; i++){
             if (self.bonuses[i]._cell === cell){
@@ -121,6 +111,61 @@ function SnakeGame(workField, startSpeed, fiveRecords){
         }
     };
 
+    self.setBonusAddingOn = function(val){
+        if (self.bonusIntervalId){
+            window.clearInterval(self.bonusIntervalId);
+            self.bonusIntervalId = undefined;
+        }
+        if (val){
+            self.bonusIntervalId = window.setInterval(function(){
+                if (self.bonuses.length <= self.max_bonuses){
+                    self.addBonus()
+                }
+                if (self.mouses.length <= self.max_mouses) {
+                    self.addMouse()
+                }
+            }, self.newBonusInterval)
+        }
+    };
+
+    self.setSpeedGrowthOn = function(val){
+        window.clearInterval(self.__speedAddIntervalId);
+        if (val){
+            self.__speedAddIntervalId = window.setInterval(function(){self.growSpeed(self.currentSpeed, true)}, 50000)
+        }
+    };
+    self.growSpeed = function(speedInc){
+        self.currentSpeed += speedInc;
+        if (self.currentSpeed < self.__maxAllowedSpeed){
+            self.changeSpeed(self.currentSpeed, true)
+        } else {self.currentSpeed -= speedInc}
+    };
+
+    self.changeSpeed = function(newSpeed, startOk){
+        self.pauseAll();
+        var moveInterval = self.convertTimeoutSpeed(newSpeed);
+        self.snake.changeMoveInterval(moveInterval, startOk);
+
+        if (startOk) self.startAll()
+    };
+
+    self.setInitialSpeed = function(speed){
+        self.score = 0;
+        if (self.__minAllowedSpeed <= speed <= self.__maxAllowedSpeed){
+            self.initialSpeed = speed;
+            self.currentSpeed = speed;
+            self.changeSpeed(speed, false);
+            self.changeMousesSpeed(speed+20)
+        }
+
+    };
+    self.changeMousesSpeed = function(speed){
+        var spInterval = self.convertTimeoutSpeed(speed);
+        for (var m in self.mouses){
+            self.mouses[m].changeSpeed(spInterval)
+        }
+
+    };
     self.finish = function(){
         self.pauseAll();
         self.clearWindow();
@@ -147,7 +192,7 @@ function SnakeGame(workField, startSpeed, fiveRecords){
                 break;
             }
         }
-        return i< recLen ? i  : undefined
+        return i < recLen ? i  : undefined
     };
 
     self.onSnakeStack = function(message, step_cell){
@@ -155,10 +200,10 @@ function SnakeGame(workField, startSpeed, fiveRecords){
             case 'ok':
                 break;
             case 'lifeLost':
-                alert("You're out of field space :(");
+                self.pauseAll();
                 break;
             case 'outOfField':
-                alert("You're out of field space :(");
+                self.pauseAll();
                 break;
             case 'moveStack':
                 self.checkSnakeMove(step_cell);
@@ -169,27 +214,15 @@ function SnakeGame(workField, startSpeed, fiveRecords){
         }
     };
 
-    self.changeSpeed = function(newSpeed, startOk){
-        self.pauseAll();
-        self.speed = newSpeed;
-        if (startOk) {
-            self.startAll()
-        }
-    };
-
     self.onKeyPress = function(pressedKey){
-        console.log(Object.keys(KEYS));
-        if (pressedKey in Object.keys(KEYS)){
+        if (pressedKey in KEYS){
+            self.snake.changeCurse(KEYS[pressedKey]);
             if (!self.running){
                 self.startAll()
             }
-            self.snake.changeCurse(KEYS[pressedKey])
         }
     };
-    self.setExtraSpeed = function(val){
-        self._extraSpeed = val;
-        self.changeSpeed()
-    };
+
     self.checkSnakeMove = function(cell){
         if (self.workField.hasCellClass(cell, 'poison')){
             self.poisonEaten(cell);
@@ -235,13 +268,13 @@ function SnakeGame(workField, startSpeed, fiveRecords){
 
 
     self.getObjByCell = function(objArray, cell){
-        for (var obj in objArray){
-            if (obj._cell === cell) return obj
+        for (var obj_i in objArray){
+            if (objArray[obj_i]._cell === cell) return obj
         }
     };
 
     self.convertTimeoutSpeed = function(timeout){
-        return 10000/timeout
+        return 20000/timeout
     };
 
     self.getRandInt = function(min, max){
@@ -253,9 +286,9 @@ function SnakeGame(workField, startSpeed, fiveRecords){
 $(document).ready(function(){
     var m1 = new Matrix ('#matrix1', 20, 20);
     m1.create();
-    var game = new SnakeGame(m1, 200);
+    var game = new SnakeGame(m1, 20);
     var input = $('inp1');
-    input.oninput = game.setExtraSpeed;
+    input.oninput = function(newSpeed){game.setInitialSpeed(newSpeed)};
     document.onkeydown = function(e){game.onKeyPress(e.keyCode.toString())};
     }
 );

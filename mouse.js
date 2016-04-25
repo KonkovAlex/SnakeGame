@@ -1,7 +1,7 @@
 /**
  * Created by Aleksei on 23.03.2016.
  */
-function Mouse(cell, matrix, startMoveInterval, moveStackCallback) {
+function Mouse(cell, matrix, moveStackCallback) {
     //Mouse cell jumps by field.
     // If it gets stack (meet cell which isn't free) it calls moveStackCallback
     var self = this;
@@ -29,12 +29,12 @@ function Mouse(cell, matrix, startMoveInterval, moveStackCallback) {
         }
     };
     self.unfreeze = function(){
-        if (self.__speed && !self.movingIntervalId){
-            self.movingIntervalId = window.setInterval(self.__move, self.__speed)
+        if (self.__speedInterval && !self.movingIntervalId){
+            self.movingIntervalId = window.setInterval(self.__move, self.__speedInterval)
         }
     };
     self.changeSpeed = function(speedInterval, letGo){
-        self.__speed = speedInterval;
+        self.__speedInterval = speedInterval;
         self.freeze();
         if (letGo){
             self.unfreeze();
@@ -121,7 +121,6 @@ function Mouse(cell, matrix, startMoveInterval, moveStackCallback) {
     };
     self._curse = self.getRandomCourse();
     self.setMouseClass(self._cell);
-    self.changeSpeed(startMoveInterval);
 }
 
 var BonusCell = function(cell, matrix, bonusClass, timeOut, death_callback){

@@ -7,7 +7,7 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
     var self = this;
     self._matrix = matrix;
     self.__lifes = lifes;
-    self.moveInterval = startMoveInterval;
+    self.__moveInterval = startMoveInterval;
     self.__onMoveCallback = onStackCallback;
     self.__cutedTail = undefined;
     self.maxLength = 20;
@@ -87,15 +87,23 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
         return {x: x, y: y}
     };
 
+    self.changeMoveInterval = function(interval, letItGo){
+        self.stopMoving();
+        self.__moveInterval = interval;
+        if (letItGo) self.startMoving()
+    };
+
     self.startMoving = function(){
         if (!self._moveIntervalId){
-            self._moveIntervalId = window.setInterval(self.move(), self.speed);
+            self._moveIntervalId = window.setInterval(self.move, self.__moveInterval);
         }
     };
 
     self.stopMoving = function(){
-        window.clearInterval(self._moveIntervalId);
-        self._moveIntervalId = undefined;
+        if (self._moveIntervalId){
+            window.clearInterval(self._moveIntervalId);
+            self._moveIntervalId = undefined;
+        }
     };
 
     self._addBodyPart = function(bodyCell, hasFood){
@@ -135,7 +143,7 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
     };
 
     self.changeCurse = function(newCurse){
-        if (!(newCurse in self._reservedCurses))
+        if (!self._reservedCurses.includes(newCurse))
             return;
         if (self._curse.title == newCurse){
             self.move()
@@ -148,7 +156,7 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
     self.dropOneLife = function(){
         if (self.__lifes>0){
             self.stopMoving();
-            self.__lifes --;
+            self.__lifes--;
             self.__onMoveCallback(self.events.lifeLost);
             self.resetBody();
             alert(self.__lifes + ' lifes left. Press control keys to continue playing ;)')
@@ -159,11 +167,11 @@ function Snake(startCell, matrix, lifes, startMoveInterval, onStackCallback){
     };
 
     self.isCellInBody = function(cell){
-        for (var i = 0; i < self.body.length; i++){
-            if (_.isEqual(cell, body[i].cell))
-                return false;
+        for (var i in self.body){
+            if (_.isEqual(cell, self.body[i].cell))
+                return true;
         }
-        return true
+        return false
     };
 
     self.move = function(){

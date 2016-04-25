@@ -87,16 +87,15 @@
 
 
 .cell.poison {
-    background-image: url('Images/death.png') !important;
+    background-image: url('Images/death.png');
     background-size: contain;
 }
 .cell.life {
-    background-image: url('Images/life.jpg') !important;
+    background-image: url('Images/life.jpg');
     background-size: contain;
 }
 .disappearing_cell {
-    border: 2px solid red;
-
+    background-color: red !important;
 }
 .cell.mouse {
     background-color: #424c4f;
